@@ -9,28 +9,25 @@ ARG GETH_VERSION="1.10.20"
 ARG GETH_URL_LINUX="https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.20-8f2416a8.tar.gz"
 ARG GETH_MD5_LINUX="d1793b47659cb6b1bb753b6bae2792bb"
 
-FROM python:3.9 as raiden-builder
+FROM harired/ubuntu-python3.9 as raiden-builder
 ARG RAIDEN_VERSION
 
 # clone raiden repo + install dependencies
 RUN git clone -b develop https://github.com/raiden-network/raiden /app/raiden
 RUN python3 -m venv /opt/raiden
 ENV PATH="/opt/raiden/bin:$PATH"
-#COPY ./site-packages/*   /opt/raiden/lib/python3.9/site-packages/  
+
 WORKDIR /app/raiden
 RUN git checkout ${RAIDEN_VERSION}
+#RUN pip install raiden-contracts==0.40.0
 RUN pip install pip==21.2.4
 RUN apt-get update
-RUN apt install -y software-properties-common
-#RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get install -y python3-dev
 RUN apt-get install -y pkg-config
 RUN apt-get install -y libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
-#RUN pip install wheel
-RUN pip install raiden-contracts==0.40.0
-#RUN make install
+RUN make install
 
-FROM python:3.9 as synapse-builder
+FROM harired/ubuntu-python3.9 as synapse-builder
 
 RUN python -m venv /synapse-venv && /synapse-venv/bin/pip install wheel
 
@@ -54,7 +51,7 @@ RUN sed -i 's/\(\s*\)if self.worker_type/\1if True or self.worker_type/' /synaps
 
 COPY synapse/auth/ /synapse-venv/lib/python3.9/site-packages/
 
-FROM python:3.9
+FROM harired/ubuntu-python3.9
 LABEL maintainer="Raiden Network Team <contact@raiden.network>"
 
 ARG OS_NAME
@@ -115,8 +112,14 @@ RUN git checkout "${SERVICES_VERSION}"
 #    && apt-get install -y --no-install-recommends python3-dev \
     # FIXME: why use the system 3.7 here?
 #    && 
-RUN /usr/bin/python3 -m virtualenv -p python3.9 /opt/services/venv \
-    && /opt/services/venv/bin/pip install -U pip wheel \
+RUN /usr/bin/python3 -m virtualenv -p python3.9 /opt/services/venv 
+
+RUN pip install pip==21.2.4
+RUN apt-get update
+RUN apt-get install -y python3-dev
+RUN apt-get install -y pkg-config
+RUN apt-get install -y libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+RUN  /opt/services/venv/bin/pip install -U pip wheel \
     && /opt/services/venv/bin/pip install -r requirements.txt \
     && /opt/services/venv/bin/pip install -e . \
     && mkdir -p /opt/services/keystore
