@@ -23,12 +23,12 @@ RUN pip install pip==21.2.4
 RUN apt-get update
 RUN apt install -y software-properties-common
 #RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get install -y python3.9-dev
+RUN apt-get install -y python3-dev
 RUN apt-get install -y pkg-config
 RUN apt-get install -y libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
 #RUN pip install wheel
-#RUN pip install av==8.0.3
-RUN make install
+RUN pip install raiden-contracts==0.40.0
+#RUN make install
 
 FROM python:3.9 as synapse-builder
 
@@ -111,10 +111,11 @@ RUN git clone https://github.com/raiden-network/raiden-services.git
 WORKDIR /opt/services/raiden-services
 RUN git checkout "${SERVICES_VERSION}"
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3-dev \
+#RUN apt-get update \
+#    && apt-get install -y --no-install-recommends python3-dev \
     # FIXME: why use the system 3.7 here?
-    && /usr/bin/python3 -m virtualenv -p /usr/bin/python3 /opt/services/venv \
+#    && 
+RUN /usr/bin/python3 -m virtualenv -p python3.9 /opt/services/venv \
     && /opt/services/venv/bin/pip install -U pip wheel \
     && /opt/services/venv/bin/pip install -r requirements.txt \
     && /opt/services/venv/bin/pip install -e . \
